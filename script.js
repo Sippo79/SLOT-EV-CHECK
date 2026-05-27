@@ -245,12 +245,14 @@ function readCeilingValues(machine) {
 
 function readSettingValues(machine) {
   const flags = getMachineFlags(machine);
+  const parsedTodayMedals = parseSignedNumber(fields.todayMedals.value);
 
   return {
     machine,
     flags,
     totalGames: Number(fields.totalGames.value),
-    todayMedals: fields.todayMedals.value === "" ? 0 : Number(fields.todayMedals.value),
+    todayMedals: parsedTodayMedals.value,
+    todayMedalsValid: parsedTodayMedals.valid,
     initialHits: isSettingFieldVisible("initialHits") ? Number(fields.initialHits.value) : 0,
     czCount: isSettingFieldVisible("czCount") ? Number(fields.czCount.value) : 0,
     atCount: isSettingFieldVisible("atCount") ? Number(fields.atCount.value) : 0,
@@ -338,7 +340,7 @@ function validateSettingValues(values) {
     return "今日の総回転数は1以上で入力してください。";
   }
 
-  if (values.raw.todayMedals !== "" && !Number.isFinite(values.todayMedals)) {
+  if (!values.todayMedalsValid || !Number.isFinite(values.todayMedals)) {
     return "今日の差枚を正しい数値で入力してください。";
   }
 
@@ -900,6 +902,25 @@ function formatBigRegRatio(regRatio) {
 
 function formatTextValue(value) {
   return value === null || value === undefined || value === "" ? "要確認" : String(value);
+}
+
+function parseSignedNumber(value) {
+  const trimmedValue = String(value).trim();
+
+  if (trimmedValue === "") {
+    return { value: 0, valid: true };
+  }
+
+  const normalizedValue = trimmedValue.replace(/,/g, "").replace(/^\+/, "");
+
+  if (!/^-?\d+(\.\d+)?$/.test(normalizedValue)) {
+    return { value: NaN, valid: false };
+  }
+
+  return {
+    value: Number(normalizedValue),
+    valid: true,
+  };
 }
 
 function formatNumber(value, digits) {
