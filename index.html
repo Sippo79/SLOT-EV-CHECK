@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#070914" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#070914" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#070914" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="期待値ツール" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="application-name" content="期待値ツール" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>パチスロ簡易期待値計算ツール</title>
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="180x180" href="icons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero">
+        <p class="eyebrow">Slot EV Calculator</p>
+        <h1>パチスロ簡易期待値計算ツール</h1>
+        <p class="lead">
+          現在ゲーム数と天井条件から、天井到達率・投資枚数・回収枚数・期待値をかんたん判定します。
+        </p>
+      </section>
+
+      <section class="calculator-card" aria-labelledby="input-title">
+        <div class="section-header">
+          <h2 id="input-title">入力</h2>
+          <span class="chip">簡易計算</span>
+        </div>
+
+        <div class="mode-switch" role="tablist" aria-label="計算モード">
+          <button id="ceiling-mode-button" type="button" class="mode-button is-active" data-mode="ceiling">
+            天井期待値モード
+          </button>
+          <button id="setting-mode-button" type="button" class="mode-button" data-mode="setting">
+            設定期待度モード
+          </button>
+        </div>
+
+        <form id="ev-form" novalidate>
+          <div class="form-grid">
+            <label>
+              <span>機種選択</span>
+              <select id="machine-select">
+                <option value="">機種データを読み込み中...</option>
+              </select>
+            </label>
+
+            <label class="ceiling-only" data-field="currentGames" data-feature="hasCeiling">
+              <span>現在ゲーム数</span>
+              <input id="current-games" type="number" min="0" step="1" inputmode="numeric" placeholder="例：450" />
+            </label>
+
+            <label class="ceiling-only">
+              <span>スロット種別/交換率</span>
+              <select id="exchange-rate">
+                <option value="20">等価交換（20円）</option>
+                <option value="18.4">5.5枚交換（約18.4円）</option>
+                <option value="17.8">5.6枚交換（約17.8円）</option>
+                <option value="16.7">6.0枚交換（約16.7円）</option>
+              </select>
+            </label>
+          </div>
+
+          <div id="setting-fields" class="form-grid is-hidden">
+            <label data-setting-field="totalGames">
+              <span>今日の総回転数</span>
+              <input id="total-games" type="number" min="0" step="1" inputmode="numeric" placeholder="例：5200" />
+            </label>
+            <label data-setting-field="todayMedals">
+              <span>今日の差枚</span>
+              <input id="today-medals" type="number" step="1" inputmode="numeric" placeholder="例：1200" />
+            </label>
+            <label data-setting-field="initialHits">
+              <span>初当たり回数</span>
+              <input id="initial-hits" type="number" min="0" step="1" inputmode="numeric" placeholder="例：14" />
+            </label>
+            <label data-setting-field="czCount" data-feature="hasCZ">
+              <span>CZ回数</span>
+              <input id="cz-count" type="number" min="0" step="1" inputmode="numeric" placeholder="例：8" />
+            </label>
+            <label data-setting-field="atCount" data-feature="hasAT">
+              <span>AT回数</span>
+              <input id="at-count" type="number" min="0" step="1" inputmode="numeric" placeholder="例：10" />
+            </label>
+            <label data-setting-field="directAtCount" data-feature="hasAT">
+              <span>AT直撃回数</span>
+              <input id="direct-at-count" type="number" min="0" step="1" inputmode="numeric" placeholder="例：2" />
+            </label>
+            <label data-setting-field="bonusCount" data-feature="hasBonus">
+              <span>ボーナス回数</span>
+              <input id="bonus-count" type="number" min="0" step="1" inputmode="numeric" placeholder="例：12" />
+            </label>
+            <label data-setting-field="bigCount" data-feature="hasBigReg">
+              <span>BIG回数</span>
+              <input id="big-count" type="number" min="0" step="1" inputmode="numeric" placeholder="例：18" />
+            </label>
+            <label data-setting-field="regCount" data-feature="hasBigReg">
+              <span>REG回数</span>
+              <input id="reg-count" type="number" min="0" step="1" inputmode="numeric" placeholder="例：16" />
+            </label>
+            <label data-setting-field="throughCount" data-feature="hasThroughCount">
+              <span>現在のスルー回数</span>
+              <input id="through-count" type="number" min="0" step="1" inputmode="numeric" placeholder="例：2" />
+            </label>
+          </div>
+
+          <section class="machine-info" aria-labelledby="machine-info-title">
+            <div class="section-header">
+              <h3 id="machine-info-title">選択中の機種情報</h3>
+              <span id="machine-type-label" class="chip">未選択</span>
+            </div>
+            <div class="info-grid">
+              <div>
+                <span>天井G数</span>
+                <strong id="info-ceiling-game">--</strong>
+              </div>
+              <div>
+                <span>コイン持ち</span>
+                <strong id="info-coin-base">--</strong>
+              </div>
+              <div>
+                <span>初当たり確率</span>
+                <strong id="info-hit-rate">--</strong>
+              </div>
+              <div>
+                <span>タイプ</span>
+                <strong id="info-category">--</strong>
+              </div>
+              <div>
+                <span>初当たり</span>
+                <strong id="info-first-hit-type">--</strong>
+              </div>
+              <div>
+                <span>CZ</span>
+                <strong id="info-has-cz">--</strong>
+              </div>
+              <div>
+                <span>天井</span>
+                <strong id="info-has-ceiling">--</strong>
+              </div>
+              <div>
+                <span>スルー回数</span>
+                <strong id="info-has-through-count">--</strong>
+              </div>
+              <div>
+                <span>狙い目G数</span>
+                <strong id="info-recommended-start">--</strong>
+              </div>
+              <div class="wide">
+                <span>やめ時</span>
+                <strong id="info-yametoki">--</strong>
+              </div>
+              <div class="wide">
+                <span>注意メモ</span>
+                <strong id="info-notes">--</strong>
+              </div>
+            </div>
+          </section>
+
+          <p id="error-message" class="message" role="alert" aria-live="polite"></p>
+
+          <div class="actions">
+            <button type="submit">計算する</button>
+            <button type="reset" class="secondary">リセット</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="result-card" class="result-card is-empty" aria-live="polite">
+        <div class="section-header">
+          <h2>計算結果</h2>
+          <span id="machine-label" class="chip">未計算</span>
+        </div>
+
+        <div class="main-result">
+          <span>金額期待値</span>
+          <strong id="money-ev">-- 円</strong>
+        </div>
+
+        <div class="result-grid">
+          <div>
+            <span>天井到達率</span>
+            <strong id="ceiling-rate">-- %</strong>
+          </div>
+          <div>
+            <span>平均投資枚数</span>
+            <strong id="investment">-- 枚</strong>
+          </div>
+          <div>
+            <span>平均回収枚数</span>
+            <strong id="return-medals">-- 枚</strong>
+          </div>
+          <div>
+            <span>差枚期待値</span>
+            <strong id="medal-ev">-- 枚</strong>
+          </div>
+          <div>
+            <span>狙い目度</span>
+            <strong id="target-score">-- %</strong>
+          </div>
+          <div>
+            <span>平均消化ゲーム数</span>
+            <strong id="average-games">-- G</strong>
+          </div>
+        </div>
+      </section>
+
+      <section id="setting-result-card" class="result-card is-empty is-hidden" aria-live="polite">
+        <div class="section-header">
+          <h2>設定期待度結果</h2>
+          <span id="setting-machine-label" class="chip">未計算</span>
+        </div>
+
+        <div class="main-result">
+          <span>設定期待度スコア</span>
+          <strong id="setting-score">-- %</strong>
+        </div>
+
+        <div class="result-grid">
+          <div>
+            <span>合成確率</span>
+            <strong id="combined-rate">--</strong>
+          </div>
+          <div>
+            <span>初当たり確率</span>
+            <strong id="setting-hit-rate">--</strong>
+          </div>
+          <div>
+            <span>CZ確率</span>
+            <strong id="cz-rate">--</strong>
+          </div>
+          <div>
+            <span>AT直撃確率</span>
+            <strong id="direct-at-rate">--</strong>
+          </div>
+          <div>
+            <span>BIG/REG比率</span>
+            <strong id="big-reg-ratio">--</strong>
+          </div>
+          <div>
+            <span>差枚評価</span>
+            <strong id="medal-rating">--</strong>
+          </div>
+          <div class="wide">
+            <span>判定コメント</span>
+            <strong id="setting-comment">--</strong>
+          </div>
+        </div>
+      </section>
+
+      <p class="notice">
+        この判定は簡易的な目安です。実際の設定を保証するものではありません。短時間の出玉や初当たり確率だけでは設定判別はできません。ホール状況、イベント日、設定示唆、終了画面、小役確率なども確認してください。
+        機種ごとの仕様により入力項目は自動で切り替わります。表示されていない項目は判定に使用しません。
+      </p>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
