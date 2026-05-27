@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v2.6.0";
+const CACHE_VERSION = "v2.7.0";
 const CACHE_NAME = `slot-ev-tool-${CACHE_VERSION}`;
 const CACHE_PREFIX = "slot-ev-tool-";
 

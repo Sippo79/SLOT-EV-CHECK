@@ -78,6 +78,9 @@ const historyFields = {
   note: document.getElementById("history-note"),
   submit: document.getElementById("history-submit"),
   cancelEdit: document.getElementById("history-cancel-edit"),
+  exportButton: document.getElementById("history-export"),
+  importButton: document.getElementById("history-import-button"),
+  importFile: document.getElementById("history-import-file"),
   totalProfit: document.getElementById("history-total-profit"),
   monthlyProfit: document.getElementById("history-monthly-profit"),
 };
@@ -143,6 +146,11 @@ historyForm.addEventListener("submit", (event) => {
 historyFields.investment.addEventListener("input", renderHistoryProfitPreview);
 historyFields.returns.addEventListener("input", renderHistoryProfitPreview);
 historyFields.cancelEdit.addEventListener("click", resetHistoryForm);
+historyFields.exportButton.addEventListener("click", exportProfitHistory);
+historyFields.importButton.addEventListener("click", () => {
+  historyFields.importFile.click();
+});
+historyFields.importFile.addEventListener("change", importProfitHistory);
 
 historyList.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-action]");
@@ -781,6 +789,90 @@ function deleteProfitHistoryEntry(id) {
   }
 
   renderProfitHistory();
+}
+
+function exportProfitHistory() {
+  const backupData = {
+    app: "slot-ev-tool",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    history: profitHistory,
+  };
+  const json = JSON.stringify(backupData, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const dateLabel = new Date().toISOString().slice(0, 10);
+
+  link.href = url;
+  link.download = `slot-profit-history-${dateLabel}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  historyMessage.textContent = "バックアップJSONを作成しました。";
+}
+
+function importProfitHistory(event) {
+  const file = event.target.files && event.target.files[0];
+
+  if (!file) {
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.addEventListener("load", () => {
+    try {
+      const parsedData = JSON.parse(String(reader.result));
+      const importedHistory = Array.isArray(parsedData)
+        ? parsedData
+        : Array.isArray(parsedData.history)
+          ? parsedData.history
+          : null;
+
+      if (!importedHistory) {
+        throw new Error("Invalid backup format");
+      }
+
+      profitHistory = importedHistory.map(normalizeProfitHistoryEntry);
+      persistProfitHistory();
+      resetHistoryForm();
+      renderProfitHistory();
+      historyMessage.textContent = "バックアップを読み込みました。";
+    } catch (error) {
+      historyMessage.textContent = "バックアップJSONを読み込めませんでした。";
+    } finally {
+      historyFields.importFile.value = "";
+    }
+  });
+
+  reader.addEventListener("error", () => {
+    historyMessage.textContent = "バックアップファイルを読み込めませんでした。";
+    historyFields.importFile.value = "";
+  });
+
+  reader.readAsText(file);
+}
+
+function normalizeProfitHistoryEntry(entry) {
+  const investment = Number(entry.investment) || 0;
+  const returns = Number(entry.returns) || 0;
+
+  return {
+    id: entry.id || createHistoryId(),
+    date: entry.date || new Date().toISOString().slice(0, 10),
+    store: String(entry.store || ""),
+    machine: String(entry.machine || ""),
+    rate: String(entry.rate || ""),
+    reason: String(entry.reason || ""),
+    investment,
+    returns,
+    profit: Number.isFinite(Number(entry.profit)) ? Number(entry.profit) : returns - investment,
+    note: String(entry.note || ""),
+    updatedAt: entry.updatedAt || new Date().toISOString(),
+  };
 }
 
 function resetHistoryForm() {
