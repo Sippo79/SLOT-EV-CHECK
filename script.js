@@ -478,6 +478,7 @@ function calculateSettingExpectation(values) {
     directAtRate,
     regRatio,
     medalPer1000,
+    medalTotal: values.todayMedals,
     medalRating: getMedalRating(medalPer1000),
     score,
     comment: buildSettingComment(score, values.totalGames, {
@@ -588,6 +589,8 @@ function renderSettingResult(machineName, result) {
     ? formatBigRegRatio(result.regRatio)
     : "未対応";
   settingOutputs.medalRating.textContent = result.medalRating;
+  settingOutputs.medalRating.classList.toggle("is-medal-plus", result.medalTotal > 0);
+  settingOutputs.medalRating.classList.toggle("is-medal-minus", result.medalTotal < 0);
   settingOutputs.comment.textContent = result.comment;
 }
 
@@ -618,6 +621,7 @@ function resetSettingResult() {
   settingOutputs.directAtRate.textContent = "--";
   settingOutputs.bigRegRatio.textContent = "--";
   settingOutputs.medalRating.textContent = "--";
+  settingOutputs.medalRating.classList.remove("is-medal-plus", "is-medal-minus");
   settingOutputs.comment.textContent = "--";
 }
 

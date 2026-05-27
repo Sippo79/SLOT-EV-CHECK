@@ -362,6 +362,16 @@ button.secondary {
   color: var(--negative);
 }
 
+#medal-rating.is-medal-plus {
+  color: #ff6b8a;
+  text-shadow: 0 0 18px rgba(255, 107, 138, 0.28);
+}
+
+#medal-rating.is-medal-minus {
+  color: #43e7ff;
+  text-shadow: 0 0 18px rgba(67, 231, 255, 0.26);
+}
+
 .is-empty .main-result strong {
   color: var(--muted);
 }
