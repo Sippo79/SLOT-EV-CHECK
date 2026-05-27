@@ -62,12 +62,37 @@ const infoOutputs = {
   notes: document.getElementById("info-notes"),
 };
 
+const historyForm = document.getElementById("history-form");
+const historyMessage = document.getElementById("history-message");
+const historyList = document.getElementById("history-list");
+const historyFields = {
+  editId: document.getElementById("history-edit-id"),
+  date: document.getElementById("history-date"),
+  store: document.getElementById("history-store"),
+  machine: document.getElementById("history-machine"),
+  rate: document.getElementById("history-rate"),
+  reason: document.getElementById("history-reason"),
+  investment: document.getElementById("history-investment"),
+  returns: document.getElementById("history-return"),
+  profit: document.getElementById("history-profit"),
+  note: document.getElementById("history-note"),
+  submit: document.getElementById("history-submit"),
+  cancelEdit: document.getElementById("history-cancel-edit"),
+  totalProfit: document.getElementById("history-total-profit"),
+  monthlyProfit: document.getElementById("history-monthly-profit"),
+};
+
+const HISTORY_STORAGE_KEY = "slotEvToolProfitHistory";
+
 let machines = [];
 let currentMode = "ceiling";
-let medalSign = 1;
+let diffSign = 1;
+let profitHistory = loadProfitHistory();
 
 loadMachines();
-renderMedalSignToggle();
+renderDiffSignButton();
+setDefaultHistoryDate();
+renderProfitHistory();
 
 modeButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -82,9 +107,10 @@ fields.machineSelect.addEventListener("change", () => {
   resetResults();
 });
 
-fields.medalSignToggle.addEventListener("click", () => {
-  medalSign *= -1;
-  renderMedalSignToggle();
+fields.medalSignToggle.addEventListener("click", (event) => {
+  event.preventDefault();
+  diffSign = diffSign === 1 ? -1 : 1;
+  renderDiffSignButton();
 });
 
 form.addEventListener("submit", (event) => {
@@ -102,11 +128,38 @@ form.addEventListener("submit", (event) => {
 form.addEventListener("reset", () => {
   window.setTimeout(() => {
     errorMessage.textContent = "";
-    medalSign = 1;
-    renderMedalSignToggle();
+    diffSign = 1;
+    renderDiffSignButton();
     renderMachineInfo(getSelectedMachine());
     resetResults();
   }, 0);
+});
+
+historyForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  saveProfitHistoryEntry();
+});
+
+historyFields.investment.addEventListener("input", renderHistoryProfitPreview);
+historyFields.returns.addEventListener("input", renderHistoryProfitPreview);
+historyFields.cancelEdit.addEventListener("click", resetHistoryForm);
+
+historyList.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-action]");
+
+  if (!button) {
+    return;
+  }
+
+  const id = button.dataset.id;
+
+  if (button.dataset.action === "edit") {
+    editProfitHistoryEntry(id);
+  }
+
+  if (button.dataset.action === "delete") {
+    deleteProfitHistoryEntry(id);
+  }
 });
 
 async function loadMachines() {
@@ -261,7 +314,7 @@ function readSettingValues(machine) {
     machine,
     flags,
     totalGames: Number(fields.totalGames.value),
-    todayMedals: parsedTodayMedals.value * medalSign,
+    todayMedals: Math.abs(parsedTodayMedals.value) * diffSign,
     todayMedalsValid: parsedTodayMedals.valid,
     initialHits: isSettingFieldVisible("initialHits") ? Number(fields.initialHits.value) : 0,
     czCount: isSettingFieldVisible("czCount") ? Number(fields.czCount.value) : 0,
@@ -637,9 +690,199 @@ function resetSettingResult() {
   settingOutputs.comment.textContent = "--";
 }
 
-function renderMedalSignToggle() {
-  const isMinus = medalSign < 0;
-  fields.medalSignToggle.textContent = isMinus ? "−" : "＋";
+function loadProfitHistory() {
+  try {
+    const savedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
+    return savedHistory ? JSON.parse(savedHistory) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function persistProfitHistory() {
+  localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(profitHistory));
+}
+
+function setDefaultHistoryDate() {
+  if (!historyFields.date.value) {
+    historyFields.date.value = new Date().toISOString().slice(0, 10);
+  }
+}
+
+function saveProfitHistoryEntry() {
+  historyMessage.textContent = "";
+
+  const investment = parseMoneyInput(historyFields.investment.value);
+  const returns = parseMoneyInput(historyFields.returns.value);
+
+  if (!historyFields.date.value) {
+    historyMessage.textContent = "日付を入力してください。";
+    return;
+  }
+
+  if (!investment.valid || !returns.valid) {
+    historyMessage.textContent = "投資金額と回収金額は数値で入力してください。";
+    return;
+  }
+
+  const entry = {
+    id: historyFields.editId.value || createHistoryId(),
+    date: historyFields.date.value,
+    store: historyFields.store.value.trim(),
+    machine: historyFields.machine.value.trim(),
+    rate: historyFields.rate.value.trim(),
+    reason: historyFields.reason.value.trim(),
+    investment: investment.value,
+    returns: returns.value,
+    profit: returns.value - investment.value,
+    note: historyFields.note.value.trim(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (historyFields.editId.value) {
+    profitHistory = profitHistory.map((item) => (item.id === entry.id ? entry : item));
+  } else {
+    profitHistory.unshift(entry);
+  }
+
+  persistProfitHistory();
+  resetHistoryForm();
+  renderProfitHistory();
+}
+
+function editProfitHistoryEntry(id) {
+  const entry = profitHistory.find((item) => item.id === id);
+
+  if (!entry) {
+    return;
+  }
+
+  historyFields.editId.value = entry.id;
+  historyFields.date.value = entry.date;
+  historyFields.store.value = entry.store;
+  historyFields.machine.value = entry.machine;
+  historyFields.rate.value = entry.rate;
+  historyFields.reason.value = entry.reason;
+  historyFields.investment.value = entry.investment;
+  historyFields.returns.value = entry.returns;
+  historyFields.note.value = entry.note;
+  historyFields.submit.textContent = "履歴を更新";
+  historyFields.cancelEdit.classList.remove("is-hidden");
+  renderHistoryProfitPreview();
+  historyMessage.textContent = "編集中です。内容を変更して更新してください。";
+}
+
+function deleteProfitHistoryEntry(id) {
+  profitHistory = profitHistory.filter((item) => item.id !== id);
+  persistProfitHistory();
+
+  if (historyFields.editId.value === id) {
+    resetHistoryForm();
+  }
+
+  renderProfitHistory();
+}
+
+function resetHistoryForm() {
+  historyForm.reset();
+  historyFields.editId.value = "";
+  historyFields.submit.textContent = "履歴を保存";
+  historyFields.cancelEdit.classList.add("is-hidden");
+  historyMessage.textContent = "";
+  setDefaultHistoryDate();
+  renderHistoryProfitPreview();
+}
+
+function renderHistoryProfitPreview() {
+  const investment = parseMoneyInput(historyFields.investment.value);
+  const returns = parseMoneyInput(historyFields.returns.value);
+  const profit = (returns.valid ? returns.value : 0) - (investment.valid ? investment.value : 0);
+  historyFields.profit.value = `${formatSigned(profit, 0)} 円`;
+  historyFields.profit.classList.toggle("money-plus", profit > 0);
+  historyFields.profit.classList.toggle("money-minus", profit < 0);
+}
+
+function renderProfitHistory() {
+  renderHistoryProfitPreview();
+  renderProfitSummary();
+
+  if (profitHistory.length === 0) {
+    historyList.innerHTML = '<div class="history-item"><p class="history-note">まだ履歴がありません。</p></div>';
+    return;
+  }
+
+  const sortedHistory = [...profitHistory].sort((a, b) => b.date.localeCompare(a.date));
+  historyList.innerHTML = sortedHistory.map(renderProfitHistoryItem).join("");
+}
+
+function renderProfitHistoryItem(entry) {
+  const profitClass = entry.profit > 0 ? "money-plus" : entry.profit < 0 ? "money-minus" : "";
+
+  return `
+    <article class="history-item">
+      <div class="history-main">
+        <div>
+          <h3 class="history-title">${escapeHtml(entry.machine || "機種名なし")}</h3>
+          <div class="history-meta">${escapeHtml(entry.date)} / ${escapeHtml(entry.store || "店舗なし")} / ${escapeHtml(entry.rate || "レート未入力")}</div>
+        </div>
+        <div class="history-profit ${profitClass}">${formatSigned(entry.profit, 0)} 円</div>
+      </div>
+      <div class="history-meta">投資 ${formatNumber(entry.investment, 0)} 円 / 回収 ${formatNumber(entry.returns, 0)} 円 / 理由 ${escapeHtml(entry.reason || "未入力")}</div>
+      ${entry.note ? `<div class="history-note">${escapeHtml(entry.note)}</div>` : ""}
+      <div class="history-actions">
+        <button type="button" data-action="edit" data-id="${escapeHtml(entry.id)}">編集</button>
+        <button type="button" class="secondary" data-action="delete" data-id="${escapeHtml(entry.id)}">削除</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderProfitSummary() {
+  const totalProfit = profitHistory.reduce((sum, entry) => sum + entry.profit, 0);
+  const monthlyProfitMap = profitHistory.reduce((map, entry) => {
+    const month = entry.date ? entry.date.slice(0, 7) : "日付なし";
+    map[month] = (map[month] || 0) + entry.profit;
+    return map;
+  }, {});
+
+  const monthlyProfitText = Object.entries(monthlyProfitMap)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .slice(0, 6)
+    .map(([month, profit]) => `${month}: ${formatSigned(profit, 0)}円`)
+    .join(" / ");
+
+  historyFields.totalProfit.textContent = `${formatSigned(totalProfit, 0)} 円`;
+  historyFields.totalProfit.classList.toggle("money-plus", totalProfit > 0);
+  historyFields.totalProfit.classList.toggle("money-minus", totalProfit < 0);
+  historyFields.monthlyProfit.textContent = monthlyProfitText || "--";
+}
+
+function parseMoneyInput(value) {
+  const trimmedValue = String(value).trim();
+
+  if (trimmedValue === "") {
+    return { value: 0, valid: true };
+  }
+
+  const normalizedValue = trimmedValue.replace(/,/g, "").replace(/^\+/, "");
+
+  if (!/^-?\d+(\.\d+)?$/.test(normalizedValue)) {
+    return { value: NaN, valid: false };
+  }
+
+  return {
+    value: Number(normalizedValue),
+    valid: true,
+  };
+}
+
+function createHistoryId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function renderDiffSignButton() {
+  const isMinus = diffSign < 0;
+  fields.medalSignToggle.textContent = isMinus ? "−" : "+";
   fields.medalSignToggle.classList.toggle("is-minus", isMinus);
   fields.medalSignToggle.setAttribute("aria-pressed", String(isMinus));
 }

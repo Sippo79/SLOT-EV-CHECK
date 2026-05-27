@@ -264,6 +264,75 @@
         この判定は簡易的な目安です。実際の設定を保証するものではありません。短時間の出玉や初当たり確率だけでは設定判別はできません。ホール状況、イベント日、設定示唆、終了画面、小役確率なども確認してください。
         機種ごとの仕様により入力項目は自動で切り替わります。表示されていない項目は判定に使用しません。
       </p>
+
+      <section class="calculator-card history-card" aria-labelledby="history-title">
+        <div class="section-header">
+          <h2 id="history-title">収支履歴</h2>
+          <span class="chip">localStorage保存</span>
+        </div>
+
+        <form id="history-form" novalidate>
+          <input id="history-edit-id" type="hidden" />
+          <div class="form-grid">
+            <label>
+              <span>日付</span>
+              <input id="history-date" type="date" />
+            </label>
+            <label>
+              <span>店舗名</span>
+              <input id="history-store" type="text" placeholder="例：駅前ホール" />
+            </label>
+            <label>
+              <span>機種名</span>
+              <input id="history-machine" type="text" placeholder="例：スマスロ北斗の拳" />
+            </label>
+            <label>
+              <span>レート</span>
+              <input id="history-rate" type="text" placeholder="例：20スロ" />
+            </label>
+            <label>
+              <span>打った理由</span>
+              <input id="history-reason" type="text" placeholder="例：天井狙い / 設定狙い" />
+            </label>
+            <label>
+              <span>投資金額</span>
+              <input id="history-investment" type="text" inputmode="numeric" placeholder="例：15000" />
+            </label>
+            <label>
+              <span>回収金額</span>
+              <input id="history-return" type="text" inputmode="numeric" placeholder="例：28000" />
+            </label>
+            <label>
+              <span>収支（自動計算）</span>
+              <input id="history-profit" type="text" readonly value="0 円" />
+            </label>
+            <label class="wide-field">
+              <span>メモ</span>
+              <input id="history-note" type="text" placeholder="例：終了画面、示唆、反省など" />
+            </label>
+          </div>
+
+          <p id="history-message" class="message" role="alert" aria-live="polite"></p>
+
+          <div class="actions">
+            <button id="history-submit" type="submit">履歴を保存</button>
+            <button id="history-cancel-edit" type="button" class="secondary is-hidden">編集をキャンセル</button>
+          </div>
+        </form>
+
+        <div class="history-summary" aria-live="polite">
+          <div>
+            <span>収支合計</span>
+            <strong id="history-total-profit">0 円</strong>
+          </div>
+          <div>
+            <span>月別収支</span>
+            <strong id="history-monthly-profit">--</strong>
+          </div>
+        </div>
+
+        <div id="history-list" class="history-list"></div>
+      </section>
     </main>
 
     <script src="script.js"></script>
