@@ -77,7 +77,10 @@
             </label>
             <label data-setting-field="todayMedals">
               <span>現在差枚（±）</span>
-              <input id="today-medals" type="text" inputmode="decimal" placeholder="例：-2500 / +1200" />
+              <div class="signed-field">
+                <button id="medal-sign-toggle" type="button" class="sign-toggle" aria-label="差枚の符号">＋</button>
+                <input id="today-medals" type="text" inputmode="numeric" placeholder="例：2500" />
+              </div>
             </label>
             <label data-setting-field="initialHits">
               <span>初当たり回数</span>

@@ -11,6 +11,7 @@ const fields = {
   machineSelect: document.getElementById("machine-select"),
   currentGames: document.getElementById("current-games"),
   exchangeRate: document.getElementById("exchange-rate"),
+  medalSignToggle: document.getElementById("medal-sign-toggle"),
   totalGames: document.getElementById("total-games"),
   todayMedals: document.getElementById("today-medals"),
   initialHits: document.getElementById("initial-hits"),
@@ -63,8 +64,10 @@ const infoOutputs = {
 
 let machines = [];
 let currentMode = "ceiling";
+let medalSign = 1;
 
 loadMachines();
+renderMedalSignToggle();
 
 modeButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -77,6 +80,11 @@ fields.machineSelect.addEventListener("change", () => {
   renderMachineInfo(getSelectedMachine());
   updateVisibleFields();
   resetResults();
+});
+
+fields.medalSignToggle.addEventListener("click", () => {
+  medalSign *= -1;
+  renderMedalSignToggle();
 });
 
 form.addEventListener("submit", (event) => {
@@ -94,6 +102,8 @@ form.addEventListener("submit", (event) => {
 form.addEventListener("reset", () => {
   window.setTimeout(() => {
     errorMessage.textContent = "";
+    medalSign = 1;
+    renderMedalSignToggle();
     renderMachineInfo(getSelectedMachine());
     resetResults();
   }, 0);
@@ -245,13 +255,13 @@ function readCeilingValues(machine) {
 
 function readSettingValues(machine) {
   const flags = getMachineFlags(machine);
-  const parsedTodayMedals = parseSignedNumber(fields.todayMedals.value);
+  const parsedTodayMedals = parseUnsignedNumber(fields.todayMedals.value);
 
   return {
     machine,
     flags,
     totalGames: Number(fields.totalGames.value),
-    todayMedals: parsedTodayMedals.value,
+    todayMedals: parsedTodayMedals.value * medalSign,
     todayMedalsValid: parsedTodayMedals.valid,
     initialHits: isSettingFieldVisible("initialHits") ? Number(fields.initialHits.value) : 0,
     czCount: isSettingFieldVisible("czCount") ? Number(fields.czCount.value) : 0,
@@ -627,6 +637,13 @@ function resetSettingResult() {
   settingOutputs.comment.textContent = "--";
 }
 
+function renderMedalSignToggle() {
+  const isMinus = medalSign < 0;
+  fields.medalSignToggle.textContent = isMinus ? "−" : "＋";
+  fields.medalSignToggle.classList.toggle("is-minus", isMinus);
+  fields.medalSignToggle.setAttribute("aria-pressed", String(isMinus));
+}
+
 function isNormalMachine(machine) {
   const machineType = machine.machineType || "";
   return (
@@ -904,16 +921,16 @@ function formatTextValue(value) {
   return value === null || value === undefined || value === "" ? "要確認" : String(value);
 }
 
-function parseSignedNumber(value) {
+function parseUnsignedNumber(value) {
   const trimmedValue = String(value).trim();
 
   if (trimmedValue === "") {
     return { value: 0, valid: true };
   }
 
-  const normalizedValue = trimmedValue.replace(/,/g, "").replace(/^\+/, "");
+  const normalizedValue = trimmedValue.replace(/,/g, "");
 
-  if (!/^-?\d+(\.\d+)?$/.test(normalizedValue)) {
+  if (!/^\d+(\.\d+)?$/.test(normalizedValue)) {
     return { value: NaN, valid: false };
   }
 

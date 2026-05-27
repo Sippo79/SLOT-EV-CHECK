@@ -263,6 +263,31 @@ select:focus {
   background: transparent;
 }
 
+.signed-field {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.sign-toggle {
+  min-height: 48px;
+  border: 1px solid rgba(67, 231, 255, 0.35);
+  border-radius: 8px;
+  padding: 0;
+  color: #031018;
+  background: linear-gradient(135deg, var(--cyan), var(--violet));
+  font-size: 1.35rem;
+  font-weight: 900;
+  box-shadow: 0 0 22px rgba(67, 231, 255, 0.2);
+  touch-action: manipulation;
+}
+
+.sign-toggle.is-minus {
+  color: var(--text);
+  border-color: rgba(67, 231, 255, 0.45);
+  background: rgba(67, 231, 255, 0.12);
+}
+
 .message {
   min-height: 24px;
   margin: 14px 0 0;
