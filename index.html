@@ -3,9 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="google-site-verification" content="iEArXLgT91h_EASB76ODMIgekaYdL2hvQMA-KuQCTS0" />
     <meta name="theme-color" content="#070914" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#070914" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#070914" />
+    <meta
+      name="description"
+      content="パチスロの天井期待値・設定期待度・収支履歴をかんたんに記録できる無料ツールです。"
+    />
+    <meta property="og:title" content="パチスロ簡易期待値計算ツール" />
+    <meta
+      property="og:description"
+      content="パチスロの天井期待値・設定期待度・収支履歴をかんたんに記録できる無料ツールです。"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="./ogp.png" />
+    <!-- og:url は公開URLに差し替え -->
+    <meta property="og:url" content="./" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="パチスロ簡易期待値計算ツール" />
+    <meta
+      name="twitter:description"
+      content="パチスロの天井期待値・設定期待度・収支履歴をかんたんに記録できる無料ツールです。"
+    />
+    <meta name="twitter:image" content="./ogp.png" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="期待値ツール" />
@@ -271,6 +292,10 @@
           <span class="chip">localStorage保存</span>
         </div>
 
+        <p class="notice history-storage-note">
+          収支履歴はこの端末のブラウザ内に保存されます。端末変更・ブラウザ削除・キャッシュ削除で消える可能性があるため、定期的なバックアップ保存をおすすめします。
+        </p>
+
         <form id="history-form" novalidate>
           <input id="history-edit-id" type="hidden" />
           <div class="form-grid">
@@ -342,5 +367,14 @@
     </main>
 
     <script src="script.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js").catch(() => {
+            // PWA登録に失敗しても計算機能はそのまま使えるようにします。
+          });
+        });
+      }
+    </script>
   </body>
 </html>

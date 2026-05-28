@@ -1299,14 +1299,3 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("./service-worker.js")
-      .then((registration) => registration.update())
-      .catch(() => {
-        // PWA登録に失敗しても計算機能はそのまま使えるようにします。
-      });
-  });
-}
